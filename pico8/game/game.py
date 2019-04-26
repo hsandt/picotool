@@ -598,11 +598,14 @@ class Game():
 
         outstr.write(bytes('version %s\n' % self.version, 'utf-8'))
 
+        # MODIFIED: Removed to try to optimize
+
         # Sanity-check the Lua written by the writer.
-        transformed_lua = Lua.from_lines(
-            self.lua.to_lines(writer_cls=lua_writer_cls,
-                              writer_args=lua_writer_args),
-            version=(self.version or 0))
+        transformed_lua = self.lua
+        # transformed_lua = Lua.from_lines(
+        #     self.lua.to_lines(writer_cls=lua_writer_cls,
+        #                       writer_args=lua_writer_args),
+        #     version=(self.version or 0))
         if transformed_lua.get_char_count() > PICO8_LUA_CHAR_LIMIT:
             if filename is not None:
                 util.error('{}: '.format(filename))
