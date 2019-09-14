@@ -129,7 +129,13 @@ class Lua():
           A populated Lua instance.
         """
         result = Lua(version)
-        result.update_from_lines(lines)
+        # ADDED: try-except
+        try:
+            result.update_from_lines(lines)
+        except IndexError as e:
+            print("IndexError caught on tokens from lines: {}".format(list(lines)))
+            print("Passing error upward")
+            raise
         return result
 
     def update_from_lines(self, lines):
@@ -138,8 +144,25 @@ class Lua():
         Args:
           lines: The Lua source, as an iterable of bytestrings.
         """
-        self._lexer.process_lines(lines)
-        self._parser.process_tokens(self._lexer.tokens)
+        # MODIFIED to output file lines (or file name if buffered) when parse error is caught
+        try:
+            self._lexer.process_lines(lines)
+        except lexer.LexerError as e:
+            print("LexerError caught on tokens from lines: {}".format(lines))
+            print("Passing error upward")
+            raise
+        except IndexError as e:
+            print("IndexError caught on tokens from lines: {}".format(list(lines)))
+            print("Passing error upward")
+            raise
+        # self._parser.process_tokens(self._lexer.tokens)
+        # MODIFIED to output file lines (or file name if buffered) when parse error is caught
+        try:
+            self._parser.process_tokens(self._lexer.tokens)
+        except parser.ParserError as e:
+            print("ParserError caught on tokens from lines: {}".format(lines))
+            print("Passing error upward")
+            raise
 
     def to_lines(self, writer_cls=None, writer_args=None):
         """Generates lines of Lua source based on the parser output.
@@ -517,9 +540,11 @@ class LuaASTEchoWriter(BaseLuaWriter):
             return b' '
 
         spaces_and_semis = []
+
         while True:
             spaces = self._get_code_for_spaces(node)
-            if self._tokens[self._pos].matches(lexer.TokSymbol(b';')):
+            # HOT FIX for IndexError on self._tokens[self._pos]
+            if self._tokens and self._tokens[self._pos].matches(lexer.TokSymbol(b';')):
                 self._pos += 1
                 spaces_and_semis.append(spaces + b';')
             else:
