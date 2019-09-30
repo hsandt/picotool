@@ -254,8 +254,15 @@ def do_build(args):
                     result.lua = lua.Lua.from_lines(
                         infh, version=game.DEFAULT_VERSION)
                     package_lua = {}
-                    _evaluate_require(result.lua, file_path=fn, package_lua=package_lua,
-                                     lua_path=getattr(args, 'lua_path', None))
+
+                    # ADDED: try-except
+                    try:
+                        _evaluate_require(result.lua, file_path=fn, package_lua=package_lua,
+                                         lua_path=getattr(args, 'lua_path', None))
+                    except LuaBuildError as e:
+                        print(f"LuaBuildError caught on _evaluate_require with file: {fn}")
+                        print("Passing error upward")
+                        raise
 
                     if getattr(args, 'optimize_tokens', False):
                         # TODO: perform const subst, dead code elim, taking package_lua into account
