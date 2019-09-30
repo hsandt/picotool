@@ -260,7 +260,8 @@ def do_build(args):
                         _evaluate_require(result.lua, file_path=fn, package_lua=package_lua,
                                          lua_path=getattr(args, 'lua_path', None))
                     except LuaBuildError as e:
-                        print(f"LuaBuildError caught on _evaluate_require with file: {fn}")
+                        print(f"LuaBuildError caught on _evaluate_require with top file: {fn}")
+                        print("The error may be located in any file recursively required, comment out until you find the culprit.")
                         print(f"msg: {e.msg}")
                         print(f"token: {e.token}")
                         print("Passing error upward")
