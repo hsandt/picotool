@@ -172,6 +172,15 @@ class TestRequireWalker(unittest.TestCase):
         self.assertEquals(1, len(result))
         self.assertEquals((b'foo', False, lexer.TokSymbol(b'(')), result[0])
 
+    def testRequireWalkerOneRequireWithoutBrackets(self):
+        ast = lua.Lua.from_lines([
+            b'print("hi")',
+            b'require "foo"',
+            b'x = 7\n'], 8)
+        result = list(build.RequireWalker(ast.tokens, ast.root).walk())
+        self.assertEquals(1, len(result))
+        self.assertEquals((b'foo', False, lexer.TokSpace(b' ')), result[0])
+
     def testRequireWalkerExpression(self):
         ast = lua.Lua.from_lines([
             b'print("hi")',
@@ -180,6 +189,15 @@ class TestRequireWalker(unittest.TestCase):
         result = list(build.RequireWalker(ast.tokens, ast.root).walk())
         self.assertEquals(1, len(result))
         self.assertEquals((b'foo', False, lexer.TokSymbol(b'(')), result[0])
+
+    def testRequireWalkerExpressionWithoutBrackets(self):
+        ast = lua.Lua.from_lines([
+            b'print("hi")',
+            b'foomod = require "foo"',
+            b'x = 7\n'], 8)
+        result = list(build.RequireWalker(ast.tokens, ast.root).walk())
+        self.assertEquals(1, len(result))
+        self.assertEquals((b'foo', False, lexer.TokSpace(b' ')), result[0])
 
     def testRequireWalkerOptionsTable(self):
         ast = lua.Lua.from_lines([

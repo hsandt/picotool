@@ -81,29 +81,42 @@ class RequireWalker(lua.BaseASTWalker):
         """
         if (isinstance(node.exp_prefix, parser.VarName) and
                     node.exp_prefix.name == lexer.TokName(b'require')):
-            arg_exps = node.args.explist.exps if node.args.explist else []
-            if len(arg_exps) < 1 or len(arg_exps) > 2:
-                self._error_at_node('require() has {} args, should have 1 or 2'
-                                    .format(len(arg_exps)), node)
-            if (not isinstance(arg_exps[0], parser.ExpValue) or
-                    not isinstance(arg_exps[0].value, lexer.TokString)):
-                self._error_at_node('require() first argument must be a '
-                                    f'string literal, but first argument is {arg_exps[0]}', node)
-            require_path = arg_exps[0].value.value
+            if isinstance(node.args, lexer.TokString):
+                path_node = node.args
+                print("path_node")
+                print(path_node)
+                # require was called without brackets (require "path")
+                # only one argument can be passed, so it must be an Expression or String
+                if not isinstance(path_node, lexer.TokString):
+                    self._error_at_node('require() first argument must be a '
+                                        f'string literal, but first argument is {path_node}', node)
+                require_path = path_node.value
+                use_game_loop = False
+            else:
+                arg_exps = node.args.explist.exps if node.args.explist else []
 
-            use_game_loop = False
-            if len(arg_exps) == 2:
-                if (not isinstance(arg_exps[1], parser.ExpValue) or
-                        not isinstance(arg_exps[1].value, parser.TableConstructor)):
-                    self._error_at_node('require() second argument must be a '
-                                        'table literal', node)
-                # require() only has one valid option for now, so hard-code this expectation
-                if (len(arg_exps[1].value.fields) != 1 or
-                    arg_exps[1].value.fields[0].key_name != lexer.TokName(b'use_game_loop') or
-                    type(arg_exps[1].value.fields[0].exp.value) != bool):
-                    self._error_at_node('Invalid require() options; did '
-                                        'you mean {use_game_loop=true} ?', node)
-                use_game_loop = arg_exps[1].value.fields[0].exp.value
+                if len(arg_exps) < 1 or len(arg_exps) > 2:
+                    self._error_at_node('require() has {} args, should have 1 or 2'
+                                        .format(len(arg_exps)), node)
+                if (not isinstance(arg_exps[0], parser.ExpValue) or
+                        not isinstance(arg_exps[0].value, lexer.TokString)):
+                    self._error_at_node('require() first argument must be a '
+                                        f'string literal, but first argument is {arg_exps[0]}', node)
+                require_path = arg_exps[0].value.value
+
+                use_game_loop = False
+                if len(arg_exps) == 2:
+                    if (not isinstance(arg_exps[1], parser.ExpValue) or
+                            not isinstance(arg_exps[1].value, parser.TableConstructor)):
+                        self._error_at_node('require() second argument must be a '
+                                            'table literal', node)
+                    # require() only has one valid option for now, so hard-code this expectation
+                    if (len(arg_exps[1].value.fields) != 1 or
+                        arg_exps[1].value.fields[0].key_name != lexer.TokName(b'use_game_loop') or
+                        type(arg_exps[1].value.fields[0].exp.value) != bool):
+                        self._error_at_node('Invalid require() options; did '
+                                            'you mean {use_game_loop=true} ?', node)
+                    use_game_loop = arg_exps[1].value.fields[0].exp.value
 
             yield (require_path, use_game_loop, self._tokens[node.start_pos])
 
