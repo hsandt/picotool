@@ -147,20 +147,17 @@ class Lua():
         # MODIFIED to output file lines (or file name if buffered) when parse error is caught
         try:
             self._lexer.process_lines(lines)
+            self._parser.process_tokens(self._lexer.tokens)
         except lexer.LexerError as e:
-            print("LexerError caught on tokens from lines: {}".format(lines))
+            print("LexerError caught on tokens from lines: {}".format(list(lines)))
             print("Passing error upward")
             raise
         except IndexError as e:
             print("IndexError caught on tokens from lines: {}".format(list(lines)))
             print("Passing error upward")
             raise
-        # self._parser.process_tokens(self._lexer.tokens)
-        # MODIFIED to output file lines (or file name if buffered) when parse error is caught
-        try:
-            self._parser.process_tokens(self._lexer.tokens)
         except parser.ParserError as e:
-            print("ParserError caught on tokens from lines: {}".format(lines))
+            print("ParserError caught on token {} from lines: {}, tokens: {}".format(e.token, list(lines), self._lexer.tokens))
             print("Passing error upward")
             raise
 
@@ -522,8 +519,16 @@ class LuaASTEchoWriter(BaseLuaWriter):
             return b' ' + keyword
 
         spaces = self._get_code_for_spaces(node)
-        assert (self._tokens[self._pos].matches(lexer.TokKeyword(keyword)) or
-                self._tokens[self._pos].matches(lexer.TokSymbol(keyword)))
+        print(self._tokens[self._pos])
+        print(lexer.TokKeyword(keyword))
+        print(lexer.TokSymbol(keyword))
+        # HOT DEBUG for unclear assert message on failure
+        if not self._tokens[self._pos].matches(lexer.TokKeyword(keyword)):
+            raise parser.ParserError("token {} does not match keyword {}".format(self._tokens[self._pos], keyword), self._tokens[self._pos])
+        if not self._tokens[self._pos].matches(lexer.TokSymbol(keyword)):
+            raise parser.ParserError("token {} does not match symbol {}".format(self._tokens[self._pos], keyword), self._tokens[self._pos])
+        # assert (self._tokens[self._pos].matches(lexer.TokKeyword(keyword)) or
+        #         self._tokens[self._pos].matches(lexer.TokSymbol(keyword)))
         self._pos += 1
         return spaces + keyword
 
